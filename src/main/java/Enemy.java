@@ -23,11 +23,13 @@ public class Enemy extends Pane {
     int enemyType;
     boolean rightSide;
 
-    public Enemy(int enemyType){
+    public Enemy(int enemyType, int x, int y){
         imageView.setFitHeight(Game.MARIO_SIZE);
         imageView.setFitWidth(Game.MARIO_SIZE);
         isAlive = true;
         this.enemyType = enemyType;
+        this.setTranslateX(x);
+        this.setTranslateY(y);
         if (enemyType == 0){
             imageView.setViewport(new Rectangle2D(offsetX,offsetY,width,height));
             animation = new SpriteAnimation(this.imageView, Duration.millis(500),count,columns,offsetX,offsetY,width,height);

@@ -18,6 +18,8 @@ public class Game extends Application {
     public static ArrayList<Block> bonuses = new ArrayList<>();
     public static ArrayList<Block> bonusesMushroom = new ArrayList<>();
 
+    public static ArrayList<Enemy> enemyList = new ArrayList<>();
+
     private HashMap<KeyCode,Boolean> keys = new HashMap<>();
 
     Image backgroundImg = new Image(getClass().getResourceAsStream("background.png"));
@@ -30,9 +32,9 @@ public class Game extends Application {
     public static Pane gameRoot = new Pane();
     public Character player;
 
-    public Enemy enemy;
+    /*public Enemy enemy;
     public Enemy enemy2;
-    public Enemy enemy3;
+    public Enemy enemy3;*/
     public Mushroom mushroom;
     int levelNumber = 0;
     private int levelWidth;
@@ -46,7 +48,12 @@ public class Game extends Application {
         background = new ImageView(backgroundImg);
         background.setFitHeight(14*BLOCK_SIZE);
         background.setFitWidth(212*BLOCK_SIZE);
+        arrangeBlocks();
+        addCharacters();
+        //mainTheme = new Sound("resources\\mainTheme.mp3");
+    }
 
+    private void arrangeBlocks() {
         levelWidth = LevelData.levels[levelNumber][0].length()*BLOCK_SIZE;
         for(int i = 0; i < LevelData.levels[levelNumber].length; i++){
             String line = LevelData.levels[levelNumber][i];
@@ -81,21 +88,21 @@ public class Game extends Application {
                 }
             }
         }
-        addCharacters();
-        //mainTheme = new Sound("resources\\mainTheme.mp3");
+    }
+
+    private void addEnemys(){
+        enemyList.add(new Enemy(0, 800, 500));
+        enemyList.add(new Enemy(1, 700, 500));
+        enemyList.add(new Enemy(0, 1600, 500));
+        gameRoot.getChildren().addAll(enemyList);
     }
 
     public void addCharacters() {
-        enemy = new Enemy(0);
-        enemy2 = new Enemy(1);
-        enemy3 = new Enemy(0);
-        enemy.setTranslateX(800);
-        enemy.setTranslateY(600 - BLOCK_SIZE - enemy.height);
-        enemy2.setTranslateX(700);
-        enemy2.setTranslateY(500);
-        enemy3.setTranslateX(1600);
-        enemy3.setTranslateY(500);
+        //enemy = new Enemy(0, 800, 500);
+        //enemy2 = new Enemy(1, 700, 500);
+        //enemy3 = new Enemy(0, 1600, 500);
         //mushroom = new Mushroom();
+        addEnemys();
         player = new Character(0);
         player.setTranslateX(0);
         player.setTranslateY(400);
@@ -112,9 +119,9 @@ public class Game extends Application {
         marioLives.setY(10);
 
         gameRoot.getChildren().add(player);
-        gameRoot.getChildren().add(enemy);
+        /*gameRoot.getChildren().add(enemy);
         gameRoot.getChildren().add(enemy2);
-        gameRoot.getChildren().add(enemy3);
+        gameRoot.getChildren().add(enemy3);*/
         appRoot.getChildren().addAll(background, gameRoot);
         appRoot.getChildren().add(button);
         appRoot.getChildren().add(marioLives);
@@ -125,22 +132,18 @@ public class Game extends Application {
         marioLives.setText("Lives: "+player.getLives());
         if (player != null) {
             playerControll();
-            enemyControll(enemy);
-            enemyControll(enemy2);
-            enemyControll(enemy3);
+            enemyControll();
             checkForMushroomBlock();
-            checkForKillByTurtle(enemy2, enemy);
+            checkForKillByTurtle();
             //System.out.println("lives: "+player.lives);
             if (player.ifFalls()) {
                 //restart();
-                if (player.getCharacterType() == 1){
-                    //player.death();
-                    player.death();
-                    player.imageView.setImage(null);
-                    player = null;
-                    player = new Character(0);
-                    gameRoot.getChildren().add(player);
-                }
+                //player.death();
+                player.death();
+                //player.imageView.setImage(null);
+                player = null;
+                player = new Character(0);
+                gameRoot.getChildren().add(player);
             }
         }
     }
@@ -190,43 +193,46 @@ public class Game extends Application {
         }
     }
 
-    private void enemyControll(Enemy enemy) {
-        if (enemy != null) {
-            if (enemy.getIsAlive()) {
-                if (enemy.playerVelocity.getY() < 10)
-                    enemy.playerVelocity = enemy.playerVelocity.add(0, 1);
-                enemy.moveY((int) enemy.playerVelocity.getY());
+    private void enemyControll() {
+        for (int i = 0; i < enemyList.size(); i++) {
+            Enemy enemy = enemyList.get(i);
+            if (enemy != null) {
+                if (enemy.getIsAlive()) {
+                    if (enemy.playerVelocity.getY() < 10)
+                        enemy.playerVelocity = enemy.playerVelocity.add(0, 1);
+                    enemy.moveY((int) enemy.playerVelocity.getY());
 
-                enemy.animation.play();
-                if (enemy.getTranslateX() <= 1) {
-                    enemy.deleteEnemy();
-                } else if (!enemy.isKeepGoing()) {
-                    if (!enemy.isRightSide()) {
-                        enemy.setScaleX(1);
-                        enemy.move(-1);
-                    } else {
-                        enemy.setScaleX(-1);
-                        enemy.move(1);
+                    enemy.animation.play();
+                    if (enemy.getTranslateX() <= 1) {
+                        enemy.deleteEnemy();
+                    } else if (!enemy.isKeepGoing()) {
+                        if (!enemy.isRightSide()) {
+                            enemy.setScaleX(1);
+                            enemy.move(-1);
+                        } else {
+                            enemy.setScaleX(-1);
+                            enemy.move(1);
+                        }
                     }
-                }
-                if (enemy.isKeepGoing() && enemy.getDeadCount() >= 1) {
-                    if (enemy.isRightSide()) {
-                        enemy.move(3);
-                    } else {
-                        enemy.move(-3);
+                    if (enemy.isKeepGoing() && enemy.getDeadCount() >= 1) {
+                        if (enemy.isRightSide()) {
+                            enemy.move(3);
+                        } else {
+                            enemy.move(-3);
+                        }
                     }
-                }
-                boolean checkForKill = checkForKill(enemy);
-                if (checkForKill && enemy.getDeadCount() < 1) {
-                    enemy.death();
-                    enemy.setAlive(false);
-                    enemy.setDeadCount(enemy.getDeadCount() + 1);
-                    //enemy.setKeepGoing(false);
-                }
-                if (checkForKill && enemy.getEnemyType() == 1) {
-                    enemy.death();
-                    enemy.setAlive(true);
-                    enemy.setKeepGoing(true);
+                    boolean checkForKill = checkForKill(enemy);
+                    if (checkForKill && enemy.getDeadCount() < 1) {
+                        enemy.death();
+                        enemy.setAlive(false);
+                        enemy.setDeadCount(enemy.getDeadCount() + 1);
+                        //enemy.setKeepGoing(false);
+                    }
+                    if (checkForKill && enemy.getEnemyType() == 1) {
+                        enemy.death();
+                        enemy.setAlive(true);
+                        enemy.setKeepGoing(true);
+                    }
                 }
             }
         }
@@ -285,14 +291,26 @@ public class Game extends Application {
         });
     }
 
-    private void checkForKillByTurtle(Enemy turtle, Enemy enemy) {
-        if (turtle.getTranslateY() >= enemy.getTranslateY() - turtle.getHeight() &&
-                turtle.getTranslateY() <= enemy.getTranslateY() + turtle.getHeight()
-                && turtle.getTranslateX() < enemy.getTranslateX() + enemy.getWidth()
-                && turtle.getTranslateX() > enemy.getTranslateX() - enemy.getWidth()
-                && turtle.getEnemyType() == 1) {
-            enemy.death();
-            enemy.setAlive(false);
+    private void checkForKillByTurtle() {
+        Enemy turtle = null;
+        for (int i = 0; i < enemyList.size(); i++) {
+            Enemy enemy = enemyList.get(i);
+            if (enemy.getEnemyType() == 1 && enemy.getDeadCount() >= 1) {
+                turtle = enemy;
+            }
+            Enemy enemy1;
+            for (int j = 0; j < enemyList.size(); j++) {
+                enemy1 = enemyList.get(j);
+                if (turtle != null && turtle != enemy1 && turtle != enemy
+                        && turtle.getTranslateY() >= enemy1.getTranslateY() - turtle.getHeight()
+                        && turtle.getTranslateY() <= enemy1.getTranslateY() + turtle.getHeight()
+                        && turtle.getTranslateX() < enemy1.getTranslateX() + enemy1.getWidth()
+                        && turtle.getTranslateX() > enemy1.getTranslateX() - enemy1.getWidth()
+                        && turtle.getEnemyType() == 1) {
+                    enemy1.death();
+                    enemy1.setAlive(false);
+                }
+            }
         }
     }
 

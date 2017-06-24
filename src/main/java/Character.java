@@ -151,7 +151,8 @@ public class Character extends Pane{
             this.setTranslateY(400);*/
             //Game.gameRoot.setLayoutX(0);
             //new Sound ("resources\\falls.wav");
-            lives--;
+
+            //lives--;
             falls = true;
             deleteCharacter();
         }
@@ -162,27 +163,29 @@ public class Character extends Pane{
         //this.imageView.setImage(null);
         this.imageView = null;
         Game.gameRoot.getChildren().remove(this);
-        //this.setAlive(false);
+        this.setAlive(false);
     }
 
     public void death(){
-        if (this.getCharacterType() == 1){
-            //this.setCharacterType(0);
-            //deleteCharacter();
-            //diminish();
-        } else /*if (!dieOnes)*/{
-            lives--;
-            this.animation.stop();
-            System.out.println("you'r die");
-            dieOnes = true;
-            int width = 16;
-            int height = 16;
-            int offsetX = 176;
-            int offsetY = 32;
-            imageView.setViewport(new Rectangle2D(offsetX,offsetY,width,height));
+        if (imageView != null){
+            if (this.getCharacterType() == 1){
+                //this.setCharacterType(0);
+                //deleteCharacter();
+                //diminish();
+            } else /*if (!dieOnes)*/{
+                lives--;
+                this.animation.stop();
+                System.out.println("you'r die");
+                dieOnes = true;
+                int width = 16;
+                int height = 16;
+                int offsetX = 176;
+                int offsetY = 32;
+                imageView.setViewport(new Rectangle2D(offsetX,offsetY,width,height));
+            }
+            isAlive = false;
+            setCanJump(false);
         }
-        isAlive = false;
-        setCanJump(false);
     }
 
     public void jumpPlayer(){
