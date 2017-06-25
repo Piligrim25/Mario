@@ -5,25 +5,31 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.util.Duration;
+import model.blocks.Block;
 
-public class Enemy extends Pane {
+public class Enemy_OLD extends Pane {
     Image enemyImage = new Image(getClass().getResourceAsStream("enemy.png"));
     ImageView imageView = new ImageView(enemyImage);
+    
     int count = 2;
     int columns = 2;
     int offsetX = 0;
     int offsetY = 0;
+    
+    public SpriteAnimation animation;    
     int width = 16;
     int height = 16;
-    public SpriteAnimation animation;
+    
+    
     public Point2D playerVelocity = new Point2D(0,0);
+    
     boolean isAlive;
     int deadCount;
     boolean keepGoing;
     int enemyType;
     boolean rightSide;
 
-    public Enemy(int enemyType, int x, int y){
+    public Enemy_OLD(int enemyType, int x, int y){
         imageView.setFitHeight(Game.MARIO_SIZE);
         imageView.setFitWidth(Game.MARIO_SIZE);
         isAlive = true;
@@ -48,8 +54,8 @@ public class Enemy extends Pane {
         boolean movingRight = value > 0;
         for (int i = 0; i < Math.abs(value); i++) {
             for (Node platform : Game.platforms) {
-                if (this.getTranslateX() < platform.getTranslateX() + Game.BLOCK_SIZE
-                        && this.getTranslateX() > platform.getTranslateX() - Game.BLOCK_SIZE
+                if (this.getTranslateX() < platform.getTranslateX() + Game.BLOCK_SIZE_WIDTH
+                        && this.getTranslateX() > platform.getTranslateX() - Game.BLOCK_SIZE_WIDTH
                         && this.getTranslateY() < platform.getTranslateY() + this.getHeight()
                         && this.getTranslateY() > platform.getTranslateY()) {
                     if (movingRight) {
@@ -96,11 +102,11 @@ public class Enemy extends Pane {
         }*/
     }
 
-    public void deadMove(ImageView imageView) {
+   /* public void deadMove(ImageView imageView) {
         if (getEnemyType() == 1) {
             imageView.setTranslateY(imageView.getTranslateY() - 5);
         }
-    }
+    }*/
 
     public void moveY(int value){
         boolean movingDown = value > 0;
@@ -113,7 +119,7 @@ public class Enemy extends Pane {
                             return;
                         }
                     } else {
-                        if(this.getTranslateY() == platform.getTranslateY()+ Game.BLOCK_SIZE){
+                        if(this.getTranslateY() == platform.getTranslateY()+ Game.BLOCK_SIZE_HEIGHT){
                             this.setTranslateY(this.getTranslateY()+1);
                             playerVelocity = new Point2D(0,10);
                             return;

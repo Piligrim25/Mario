@@ -3,6 +3,7 @@ import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
+import model.blocks.Block;
 
 public class Mushroom extends Pane {
     Image mushroomImg = new Image(getClass().getResourceAsStream("mushroom.png"));
@@ -22,8 +23,8 @@ public class Mushroom extends Pane {
         for(int i = 0; i<Math.abs(value); i++) {
             for (Node platform : Game.platforms) {
                 if(/*this.getBoundsInParent().intersects(platform.getBoundsInParent())*/
-                        this.getTranslateX() < platform.getTranslateX() + Game.BLOCK_SIZE
-                                && this.getTranslateX() > platform.getTranslateX() - Game.BLOCK_SIZE
+                        this.getTranslateX() < platform.getTranslateX() + Game.BLOCK_SIZE_WIDTH
+                                && this.getTranslateX() > platform.getTranslateX() - Game.BLOCK_SIZE_WIDTH
                                 && this.getTranslateY() < platform.getTranslateY() + this.getHeight()
                                 && this.getTranslateY() > platform.getTranslateY()) {
                     if (movingRight) {
@@ -49,7 +50,7 @@ public class Mushroom extends Pane {
                         }
                     }
                     else{
-                        if(this.getTranslateY() == platform.getTranslateY()+ Game.BLOCK_SIZE){
+                        if(this.getTranslateY() == platform.getTranslateY()+ Game.BLOCK_SIZE_HEIGHT){
                             this.setTranslateY(this.getTranslateY()+1);
                             playerVelocity = new Point2D(0,10);
                             return;
