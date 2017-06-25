@@ -7,7 +7,7 @@ import javafx.scene.layout.Pane;
 import javafx.util.Duration;
 import model.blocks.Block;
 
-public class Character extends Pane {
+public class Character_OLD extends Pane {
 	Image marioImg = new Image(getClass().getResourceAsStream("mario.png"));
 	ImageView imageView = new ImageView(marioImg);
 	int count = 3;
@@ -23,7 +23,7 @@ public class Character extends Pane {
 	public boolean dieOnes;
 	public int deadCount;
 
-	public Character(int characterType) {
+	public Character_OLD(int characterType) {
 		playerVelocity = new Point2D(0, 0);
 		isAlive = true;
 		this.characterType = characterType;
@@ -96,11 +96,6 @@ public class Character extends Pane {
 		this.setHeight(40);
 		getChildren().addAll(this.imageView);
 	}
-
-	
-	
-	
-	
 	
 	public void moveX(int value) {
 		boolean movingRight = value > 0;

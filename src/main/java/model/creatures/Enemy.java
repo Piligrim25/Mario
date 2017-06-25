@@ -63,7 +63,7 @@ public abstract class Enemy extends Creature {
 					} else {
 						if (this.getTranslateY() == platform.getTranslateY() + blockSizeHeight) {
 							this.setTranslateY(this.getTranslateY() + 1);
-							gravity = new Point2D(0, 10);
+							setGravity(new Point2D(0, 10));
 							return;
 						}
 					}

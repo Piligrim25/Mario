@@ -21,7 +21,7 @@ public abstract class Creature extends Pane {
 	private int offsetX;
 	private int offsetY;
 
-	public Point2D gravity;
+	private Point2D gravity;
 
 	public Creature(Image creatureImage, int width, int height, int lives, int count, int columns, int offsetX,
 			int offsetY, Point2D gravity, double animationDuration) {
