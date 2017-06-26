@@ -10,6 +10,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+
 import model.blocks.Block;
 import model.blocks.BlockFactory;
 import model.blocks.BlockType;
@@ -19,6 +20,7 @@ import model.creatures.EnemyType;
 import model.creatures.Goomba;
 import model.creatures.KoopaTroopa;
 import model.creatures.Character;
+import model.creatures.Mushroom;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +34,8 @@ public class Game extends Application {
 	Image marioImg = new Image(getClass().getResourceAsStream("mario.png"));
 
 	//Image marioImg = new Image(getClass().getResourceAsStream("scottpilgrim_multiple.png"));
+	
+	Image mushroomImg = new Image(getClass().getResourceAsStream("mushroom.png"));
 
 	public static ArrayList<Block> platforms = new ArrayList<>();
 	public static ArrayList<Block> bricks = new ArrayList<>();
@@ -60,6 +64,9 @@ public class Game extends Application {
 	int levelNumber = 0;
 	private int levelWidth;
 	Text marioLives;
+	
+	Text marioScore;
+	int score = 0;
 	/*
 	 * @FXML Pane appRoot;
 	 * 
@@ -146,8 +153,6 @@ public class Game extends Application {
 				platforms));
 		enemyList.add(
 				enemyFactory.createEnemy(EnemyType.GOOMBA, 1600, 500, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
-		enemyList.add(enemyFactory.createEnemy(EnemyType.KOOPA_TROOPA, 2100, 300, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT,
-				platforms));
 		gameRoot.getChildren().addAll(enemyList);
 	}
 
@@ -186,31 +191,55 @@ public class Game extends Application {
 			restart();
 		});
 		marioLives = new Text();
-		marioLives.setText("Lives: " + player.getLives());
 		marioLives.setX(500);
 		marioLives.setY(10);
+		
+		marioScore = new Text();
+		marioScore.setX(800);
+		marioScore.setY(10);
 
 		gameRoot.getChildren().add(player);
 		appRoot.getChildren().addAll(background, gameRoot);
 		appRoot.getChildren().add(button);
 		appRoot.getChildren().add(marioLives);
+		appRoot.getChildren().add(marioScore);
 	}
 
 	private void update() {
 		marioLives.setText("");
 		marioLives.setText("Lives: " + player.getLives());
+
+		marioScore.setText("");
+		marioScore.setText("Score: " + score);
 		if (player != null) {
 			
 			playerControll();
 			enemyControll();
+			
 			checkForMushroomBlock();
+			checkForBonusesBlock();
+			
 			checkForKillByTurtle();
+			
 			collisionWithMushroom();
 			
 			if (player.ifFalls()) {
 				restart();
 				player.death();
 				player.getImageView().setImage(null);
+			}
+		}
+	}
+	
+	private void checkForBonusesBlock() {
+		if (!player.isCanJump()) {
+			for (Node block : bonuses) {
+				if (block.getTranslateY() + BLOCK_SIZE_HEIGHT + 2 >= player.getTranslateY()
+						&& block.getTranslateY() + BLOCK_SIZE_HEIGHT <= player.getTranslateY()
+						&& player.getTranslateX() < block.getTranslateX() + 20
+						&& player.getTranslateX() >= block.getTranslateX() - 20) {
+					score += 100;
+				}
 			}
 		}
 	}
@@ -224,11 +253,12 @@ public class Game extends Application {
 						&& player.getTranslateX() >= block.getTranslateX() - 20) {
 					// block.setTranslateY(block.getTranslateY() - 10);
 					if (mushroom == null) {
-						mushroom = new Mushroom();
+						mushroom = new Mushroom(mushroomImg, 256, 256, lives, 0, 0, 0, 0, gravity,
+								0, platforms, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
 						if (!mushroom.getIsOne()) {
 							mushroom.setIsOne(true);
 							mushroom.setTranslateX(block.getTranslateX());
-							mushroom.setTranslateY(block.getTranslateY() - MARIO_SIZE);
+							mushroom.setTranslateY(block.getTranslateY() - BLOCK_SIZE_HEIGHT);
 							gameRoot.getChildren().add(mushroom);
 						}
 					}
@@ -239,17 +269,18 @@ public class Game extends Application {
 
 	private void collisionWithMushroom() {
 		if (mushroom != null) {
-			if (mushroom.playerVelocity.getY() < 10)
-				mushroom.playerVelocity = mushroom.playerVelocity.add(0, 1);
-			mushroom.moveY((int) mushroom.playerVelocity.getY());
+			if (mushroom.getGravity().getY() < 10)
+				mushroom.setGravity(mushroom.getGravity().add(0, 1));
+			mushroom.moveY((int) mushroom.getGravity().getY());
 			if (mushroom.getIsOne())
-				mushroom.moveX(mushroom.isRightSide() ? 2 : -2);
-			if (mushroom.getTranslateX() <= 1)
-				mushroom.delete();
+				mushroom.move(mushroom.isRightSide() ? 2 : -2);
+			if (mushroom.getTranslateX() <= -20 || mushroom.getTranslateY() > appRoot.getHeight()) { 
+				gameRoot.getChildren().remove(mushroom);
+			}
 			if (player.getBoundsInParent().intersects(mushroom.getBoundsInParent())) {
 				if (!player.isGrewUp())
 					player.setTranslateY(player.getTranslateY() - player.getHeight());
-				mushroom.delete();
+				gameRoot.getChildren().remove(mushroom);
 				mushroom = null;
 				player.growUp();
 			}
