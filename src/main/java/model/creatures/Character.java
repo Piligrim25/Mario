@@ -139,22 +139,18 @@ public class Character extends Creature {
 
 	public void death() {
 		if (getImageView() != null) {
-			if (isGrewUp) {
-				// this.setCharacterType(0);
-				// deleteCharacter();
-				diminish();
-			} else /* if (!dieOnes) */ {
-				setLives(getLives() - 1);
-				getAnimation().stop();
-				System.out.println("you'r die");
-				// dieOnes = true;
-				isGrewUp = false;
-				int width = 16;
-				int height = 16;
-				int offsetX = 176;
-				int offsetY = 32;
-				getImageView().setViewport(new Rectangle2D(offsetX, offsetY, width, height));
-			}
+			
+			setLives(getLives() - 1);
+			getAnimation().stop();
+			System.out.println("you'r die");
+			// dieOnes = true;
+			isGrewUp = false;
+			int width = 16;
+			int height = 16;
+			int offsetX = 176;
+			int offsetY = 32;
+			getImageView().setViewport(new Rectangle2D(offsetX, offsetY, width, height));
+			
 			// isAlive = false;
 			setCanJump(false);
 		}

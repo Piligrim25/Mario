@@ -31,6 +31,8 @@ public class Game extends Application {
 
 	Image marioImg = new Image(getClass().getResourceAsStream("mario.png"));
 
+	//Image marioImg = new Image(getClass().getResourceAsStream("scottpilgrim_multiple.png"));
+
 	public static ArrayList<Block> platforms = new ArrayList<>();
 	public static ArrayList<Block> bricks = new ArrayList<>();
 	public static ArrayList<Block> bonuses = new ArrayList<>();
@@ -144,7 +146,7 @@ public class Game extends Application {
 				platforms));
 		enemyList.add(
 				enemyFactory.createEnemy(EnemyType.GOOMBA, 1600, 500, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
-		enemyList.add(enemyFactory.createEnemy(EnemyType.KOOPA_TROOPA, 1900, 300, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT,
+		enemyList.add(enemyFactory.createEnemy(EnemyType.KOOPA_TROOPA, 2100, 300, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT,
 				platforms));
 		gameRoot.getChildren().addAll(enemyList);
 	}
@@ -158,13 +160,22 @@ public class Game extends Application {
 	Point2D gravity = new Point2D(0, 0);
 	int lives = 3;
 	double animationDuration = 200.0;
+	
+	/*int count = 8;
+	int columns = 8;
+	int width = 108;
+	int height = 140;
+	int offsetX = 0;
+	int offsetY = 0;
+	Point2D gravity = new Point2D(0, 0);
+	int lives = 3;
+	double animationDuration = 700.0;*/
 
 	public void addCharacters() {
 		addEnemys();
 
 		player = new Character(marioImg, width, height, lives, count, columns, offsetX, offsetY, gravity,
 				animationDuration, platforms, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
-		// player = new Character(0);
 		player.setTranslateX(0);
 		player.setTranslateY(400);
 		player.setLives(3);
@@ -180,7 +191,6 @@ public class Game extends Application {
 		marioLives.setY(10);
 
 		gameRoot.getChildren().add(player);
-
 		appRoot.getChildren().addAll(background, gameRoot);
 		appRoot.getChildren().add(button);
 		appRoot.getChildren().add(marioLives);
@@ -195,23 +205,12 @@ public class Game extends Application {
 			enemyControll();
 			checkForMushroomBlock();
 			checkForKillByTurtle();
-
 			collisionWithMushroom();
 			
-			// System.out.println("lives: "+player.lives);
 			if (player.ifFalls()) {
-				// restart();
-				// player.death();
+				restart();
 				player.death();
 				player.getImageView().setImage(null);
-				/*
-				 * player = null; player = new Character(marioImg, width,
-				 * height, lives, count, columns, offsetX, offsetY, gravity,
-				 * animationDuration, platforms, BLOCK_SIZE_WIDTH,
-				 * BLOCK_SIZE_HEIGHT);
-				 */
-
-				// gameRoot.getChildren().add(player);
 			}
 		}
 	}
@@ -269,11 +268,7 @@ public class Game extends Application {
 					enemy.moveY((int) enemy.getGravity().getY());
 
 					enemy.getAnimation().play();
-					/*
-					 * if (enemy.getTranslateX() <= 1) { enemy = null; // delete
-					 * } else
-					 */
-
+					
 					// if (enemy instanceof KoopaTroopa && enemy.getLives() !=
 					// 1) { // !enemy.isKeepGoing()
 					if (enemy.isAlive()) {
@@ -285,7 +280,7 @@ public class Game extends Application {
 							enemy.move(1);
 						}
 					}
-					if (enemy instanceof KoopaTroopa && enemy.getLives() < 2) { // enemy.isKeepGoing()
+					if (enemy instanceof KoopaTroopa && enemy.getLives() < 2) {
 						if (enemy.isRightSide()) {
 							enemy.move(3);
 						} else {
@@ -301,28 +296,31 @@ public class Game extends Application {
 					if (enemy instanceof KoopaTroopa && checkForKill) {
 						enemyFactory.enemyDeath(enemy);
 						enemy.setAlive(true);
+						// enemy.setAlive(false); // not false
 						enemy.setLives(enemy.getLives() - 1);
 					}
 				}
+				
+				// delete if enemy live map
+				if (enemy.getTranslateX() <= -20 || enemy.getTranslateY() > appRoot.getHeight()) { 
+					gameRoot.getChildren().remove(enemy);
+				}
+				
 			}
 		}
 	}
 	
+	double start = 0;
+	double finish = 0;
+	double timeOfImmortality = 1_000_000;
+	
 	private boolean checkForKill(Enemy enemy) {
 		boolean isDead = false;
-		
-		/*
-		 * if (player.getTranslateX() < enemy.getTranslateX() + enemy.getWidth()
-		 * && player.getTranslateX() > enemy.getTranslateX() - enemy.getWidth())
-		 * { if (player.getTranslateY() >= enemy.getTranslateY() -
-		 * player.getHeight() && player.getTranslateY() <= enemy.getTranslateY()
-		 * - player.getHeight() + 5) {
-		 * 
-		 * }
-		 */
+		// collision player with enemy
 		if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
+			// player killing enemy
 			if (player.getTranslateY() >= enemy.getTranslateY() - player.getHeight()
-					&& player.getTranslateY() <= enemy.getTranslateY() - player.getHeight() + 5) {
+					&& player.getTranslateY() <= enemy.getTranslateY() - player.getHeight() + 5) { 
 
 				if (player.getTranslateX() < enemy.getTranslateX()) {
 					enemy.setRightSide(true);
@@ -334,62 +332,44 @@ public class Game extends Application {
 					player.setJumpOnes(true);
 				}
 				
-			} else {
-
-				/*
-				 * if (player.getTranslateY() > enemy.getTranslateY() -
-				 * player.getHeight() + 5 && player.getTranslateY() <
-				 * enemy.getTranslateY() + player.getHeight()) {
-				 */
-
+			} else if(finish - start > timeOfImmortality) {
+				
+				System.out.println(finish - start);
+				// enemy killing player
+				start = System.currentTimeMillis() * 1000;
 				if (player.isGrewUp()) {
-					// player.death();
-					double translateX = player.getTranslateX();
-					double translateY = player.getTranslateY();
-					// player.death();
-					// player.getImageView().setImage(null);
-					/*
-					 * player = null; player = new Character(marioImg, width,
-					 * height, lives, count, columns, offsetX, offsetY, gravity,
-					 * animationDuration, platforms, BLOCK_SIZE_WIDTH,
-					 * BLOCK_SIZE_HEIGHT);
-					 */
 					player.diminish();
-
-					player.setTranslateX(translateX);
-					player.setTranslateY(translateY + MARIO_SIZE);
-					movingListener();
-					// gameRoot.getChildren().add(player);
-					// player.setDieOnes(true);
-					// player.setAlive(true);
+					player.setTranslateY(player.getTranslateY() + MARIO_SIZE);
 					player.setGrewUp(false);
-
 					System.out.println("diminish");
-
-					player.setLives(player.getLives() + 1);
-				} else if (player.getLives() >= 1) {
-					player.setLives(player.getLives() - 1);
-				} else if (player.getLives() == 1) {
-					player.death();
+				} else {
+					if (player.getLives() == 1) {
+						// TODO add game over
+						System.out.println("Game over!");
+						restart();
+					} else {
+						player.death();
+					}
 				}
-
-				player.setCanJump(false);
-			} /*
-				 * else { //player.setDeadCount(0); player.setAlive(true);
-				 * //player.setDieOnes(false); }
-				 */
+				//System.out.println(player.getLives());
+			}
+			player.setCanJump(false);
 		}
-		if(player.getGravity().getY() == 0)
+		finish = System.currentTimeMillis() * 1000;
+		// check for player jump just ones
+		if(player.getGravity().getY() == 0) 
 			player.setJumpOnes(false);
 		return isDead;
 	}
-
-	private void movingListener() {
+	
+	// camera
+	private void movingListener() { 
 		player.translateXProperty().addListener((obs, old, newValue) -> {
 			int offset = newValue.intValue();
-			if (offset > 640 && offset < levelWidth - 640) {
-				gameRoot.setLayoutX(-(offset - 640));
-				background.setLayoutX(-(offset - 640));
+			int bound = (int) (appRoot.getWidth() * 0.6);
+			if (offset > bound && offset < levelWidth - bound) {
+				gameRoot.setLayoutX(-(offset - bound));
+				background.setLayoutX(-(offset - bound));
 			}
 		});
 	}
@@ -409,9 +389,11 @@ public class Game extends Application {
 						&& turtle.getTranslateY() <= enemy1.getTranslateY() + turtle.getHeight()
 						&& turtle.getTranslateX() < enemy1.getTranslateX() + enemy1.getWidth()
 						&& turtle.getTranslateX() > enemy1.getTranslateX() - enemy1.getWidth()
-						&& enemy instanceof KoopaTroopa) {
+						&& enemy instanceof KoopaTroopa ) {
 					enemyFactory.enemyDeath(enemy1);
-					enemy1.setAlive(false);
+					if(enemy1 instanceof Goomba) {
+						enemy1.setAlive(false);
+					}
 				}
 			}
 		}
@@ -458,13 +440,15 @@ public class Game extends Application {
 
 	private void restart() {
 		platforms.clear();
-		keys.clear();
+		keys.clear(); 
+		enemyList.clear();
+		background = null;
+		//mainTheme.mediaPlayer.stop();
 		gameRoot.getChildren().clear();
-		appRoot.getChildren().removeAll(gameRoot);
-		gameRoot.getChildren().clear();
-		// gameRoot.getChildren().removeAll();
-		// mainTheme.getMediaPlayer().stop();
+		appRoot.getChildren().clear();
 		initContent();
+		gameRoot.setLayoutX(0);
+		background.setLayoutX(0);
 	}
 
 	private boolean isPressed(KeyCode key) {
