@@ -1,3 +1,4 @@
+package model.blocks;
 
 public class LevelData {
 

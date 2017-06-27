@@ -65,7 +65,6 @@ public class EnemyFactory {
 			offsetY = 5;
 			height = 12;
 		}
-
 		enemy.death(fitHeight, fitWidth, translateY, offsetX, offsetY, width, height);
 	}
 }

@@ -4,16 +4,20 @@ import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import model.blocks.Block;
 import model.blocks.BlockFactory;
 import model.blocks.BlockType;
+import model.blocks.LevelData;
 import model.creatures.Enemy;
 import model.creatures.EnemyFactory;
 import model.creatures.EnemyType;
@@ -21,55 +25,79 @@ import model.creatures.Goomba;
 import model.creatures.KoopaTroopa;
 import model.creatures.Character;
 import model.creatures.Mushroom;
+import view.View;
+import controller.Controller;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Game extends Application {
 
-	public BlockFactory blockFactory = new BlockFactory();
-
-	public EnemyFactory enemyFactory = new EnemyFactory();
-
+	private BlockFactory blockFactory = new BlockFactory();
+	private EnemyFactory enemyFactory = new EnemyFactory();
+	
+	private Controller controller;
+	private View view;
+	
 	Image marioImg = new Image(getClass().getResourceAsStream("mario.png"));
-
 	//Image marioImg = new Image(getClass().getResourceAsStream("scottpilgrim_multiple.png"));
 	
 	Image mushroomImg = new Image(getClass().getResourceAsStream("mushroom.png"));
 
-	public static ArrayList<Block> platforms = new ArrayList<>();
-	public static ArrayList<Block> bricks = new ArrayList<>();
-	public static ArrayList<Block> bonuses = new ArrayList<>();
-	public static ArrayList<Block> bonusesMushroom = new ArrayList<>();
+	private static ArrayList<Block> platforms = new ArrayList<>();
+	private static ArrayList<Block> bricks = new ArrayList<>();
+	private static ArrayList<Block> bonuses = new ArrayList<>();
+	private static ArrayList<Block> bonusesMushroom = new ArrayList<>();
 
-	public static ArrayList<Enemy> enemyList = new ArrayList<>();
+	private static ArrayList<Enemy> enemyList = new ArrayList<>();
 
 	private HashMap<KeyCode, Boolean> keys = new HashMap<>();
 
-	Image backgroundImg = new Image(getClass().getResourceAsStream("background.png"));
-	ImageView background;
-	public static final int BLOCK_SIZE_WIDTH = 45;
-	public static final int BLOCK_SIZE_HEIGHT = 45;
-	public static final int MARIO_SIZE = 40;
-	Sound mainTheme;
-
-	public static Pane appRoot = new Pane();
-	public static Pane gameRoot = new Pane();
-	public Character player;
-
-	/*
-	 * public Enemy enemy; public Enemy enemy2; public Enemy enemy3;
-	 */
-	public Mushroom mushroom;
-	int levelNumber = 0;
-	private int levelWidth;
-	Text marioLives;
+	private Image backgroundImg = new Image(getClass().getResourceAsStream("background.png"));
+	private ImageView background;
 	
-	Text marioScore;
-	int score = 0;
-	/*
-	 * @FXML Pane appRoot;
-	 * 
+	private static final int BLOCK_SIZE_WIDTH = 45;
+	private static final int BLOCK_SIZE_HEIGHT = 45;
+	private static final int MARIO_SIZE = 40;
+	
+	//private Sound mainTheme;
+	private static Pane appRoot = new Pane();
+	private static Pane gameRoot = new Pane();
+	
+	private Character player;
+	private Mushroom mushroom;
+	
+	private int levelNumber = 0;
+	private Text marioLives;
+	private Text marioScore;
+	private int score = 0;
+	private Button restartButton;
+	
+	private int count = 3;
+	private int columns = 3;
+	private int width = 16;
+	private int height = 16;
+	private int offsetX = 96;
+	private int offsetY = 32;
+	private Point2D gravity = new Point2D(0, 0);
+	private int lives = 3;
+	private double animationDuration = 200.0;
+	
+	/*private int count = 8;
+	private int columns = 8;
+	private int width = 108;
+	private int height = 140;
+	private int offsetX = 0;
+	private int offsetY = 0;
+	private Point2D gravity = new Point2D(0, 0);
+	private int lives = 3;
+	private double animationDuration = 700.0;*/
+	
+	private double start = 0;
+	private double finish = 0;
+	private double timeOfImmortality = 1_000_000;
+	
+	/* @FXML Pane appRoot;
 	 * @FXML Pane gameRoot;
 	 */
 
@@ -77,132 +105,80 @@ public class Game extends Application {
 		background = new ImageView(backgroundImg);
 		background.setFitHeight(14 * BLOCK_SIZE_WIDTH);
 		background.setFitWidth(212 * BLOCK_SIZE_WIDTH);
-		arrangeBlocks();
+		view = new View(blockFactory, platforms, bricks, bonuses, bonusesMushroom,
+				BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, gameRoot, levelNumber);
+		view.arrangeBlocks();
 		addCharacters();
+		controller = new Controller(BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, player,
+				enemyFactory, enemyList, keys, platforms, gameRoot);
+		
 		// mainTheme = new Sound("resources\\mainTheme.mp3");
 	}
-
-	private void arrangeBlocks() {
-		levelWidth = LevelData.levels[levelNumber][0].length() * BLOCK_SIZE_WIDTH;
-		for (int i = 0; i < LevelData.levels[levelNumber].length; i++) {
-			String line = LevelData.levels[levelNumber][i];
-			for (int j = 0; j < line.length(); j++) {
-				switch (line.charAt(j)) {
-				case '0':
-					break;
-				case '1':
-					Block platformFloor = blockFactory.createBlock(BlockType.PLATFORM, j * BLOCK_SIZE_WIDTH,
-							i * BLOCK_SIZE_HEIGHT, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
-					platforms.add(platformFloor);
-					gameRoot.getChildren().add(platformFloor);
-					break;
-				case '2':
-					Block brick = blockFactory.createBlock(BlockType.BRICK, j * BLOCK_SIZE_WIDTH, i * BLOCK_SIZE_HEIGHT,
-							BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
-					platforms.add(brick);
-					gameRoot.getChildren().add(brick);
-					bricks.add(brick);
-					break;
-				case '3':
-					Block bonus = blockFactory.createBlock(BlockType.BONUS, j * BLOCK_SIZE_WIDTH, i * BLOCK_SIZE_HEIGHT,
-							BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
-					platforms.add(bonus);
-					gameRoot.getChildren().add(bonus);
-					bonuses.add(bonus);
-					break;
-				case '4':
-					Block stone = blockFactory.createBlock(BlockType.STONE, j * BLOCK_SIZE_WIDTH, i * BLOCK_SIZE_HEIGHT,
-							BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
-					platforms.add(stone);
-					gameRoot.getChildren().add(stone);
-					break;
-				case '5':
-					Block pipeTop = blockFactory.createBlock(BlockType.PIPE_TOP, j * BLOCK_SIZE_WIDTH,
-							i * BLOCK_SIZE_HEIGHT, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
-					platforms.add(pipeTop);
-					gameRoot.getChildren().add(pipeTop);
-					break;
-				case '6':
-					Block pipeBottom = blockFactory.createBlock(BlockType.PIPE_BOTTOM, j * BLOCK_SIZE_WIDTH,
-							i * BLOCK_SIZE_HEIGHT, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
-					platforms.add(pipeBottom);
-					gameRoot.getChildren().add(pipeBottom);
-					break;
-				case '7':
-					Block bonusMushroom = blockFactory.createBlock(BlockType.BONUS, j * BLOCK_SIZE_WIDTH,
-							i * BLOCK_SIZE_HEIGHT, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
-					platforms.add(bonusMushroom);
-					gameRoot.getChildren().add(bonusMushroom);
-					bonusesMushroom.add(bonusMushroom);
-					break;
-				case '*':
-					Block invisibleBlock = blockFactory.createBlock(BlockType.INVISIBLE_BLOCK, j * BLOCK_SIZE_WIDTH,
-							i * BLOCK_SIZE_HEIGHT, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
-					platforms.add(invisibleBlock);
-					gameRoot.getChildren().add(invisibleBlock);
-					break;
-				}
-			}
-		}
+	
+	private void addInterface() {
+		restartButton = new Button();
+		restartButton.setText("Reload");
+		restartButton.setOnAction(event -> {
+			restart();
+		});
+		
+		marioLives = new Text();
+		marioLives.setFill(Color.grayRgb(80));
+		marioLives.setFont(new Font("Roboto", 20));
+		marioLives.setEffect(new GaussianBlur(1.5));
+		marioLives.setX(500);
+		marioLives.setY(30);
+		
+		marioScore = new Text();
+		marioScore.setFont(new Font("Roboto", 20));
+		marioScore.setFill(Color.grayRgb(80));
+		marioScore.setEffect(new GaussianBlur(1.5));
+		marioScore.setX(800);
+		marioScore.setY(30);
+		
+		appRoot.getChildren().add(restartButton);
+		appRoot.getChildren().add(marioLives);
+		appRoot.getChildren().add(marioScore);
 	}
 
 	private void addEnemys() {
 		enemyList.add(
 				enemyFactory.createEnemy(EnemyType.GOOMBA, 800, 300, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
-		enemyList.add(enemyFactory.createEnemy(EnemyType.KOOPA_TROOPA, 700, 300, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT,
-				platforms));
+		enemyList.add(
+				enemyFactory.createEnemy(EnemyType.KOOPA_TROOPA, 700, 300, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
 		enemyList.add(
 				enemyFactory.createEnemy(EnemyType.GOOMBA, 1600, 500, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
+		enemyList.add(
+				enemyFactory.createEnemy(EnemyType.GOOMBA, 2230, 500, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
+		enemyList.add(
+				enemyFactory.createEnemy(EnemyType.KOOPA_TROOPA, 2450, 500, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
+		enemyList.add(
+				enemyFactory.createEnemy(EnemyType.KOOPA_TROOPA, 3900, 500, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
+		enemyList.add(
+				enemyFactory.createEnemy(EnemyType.GOOMBA, 5430, 500, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
+		enemyList.add(
+				enemyFactory.createEnemy(EnemyType.KOOPA_TROOPA, 5500, 500, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
+		enemyList.add(
+				enemyFactory.createEnemy(EnemyType.GOOMBA, 8000, 500, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
+		enemyList.add(
+				enemyFactory.createEnemy(EnemyType.GOOMBA, 7890, 500, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
 		gameRoot.getChildren().addAll(enemyList);
 	}
 
-	int count = 3;
-	int columns = 3;
-	int width = 16;
-	int height = 16;
-	int offsetX = 96;
-	int offsetY = 32;
-	Point2D gravity = new Point2D(0, 0);
-	int lives = 3;
-	double animationDuration = 200.0;
-	
-	/*int count = 8;
-	int columns = 8;
-	int width = 108;
-	int height = 140;
-	int offsetX = 0;
-	int offsetY = 0;
-	Point2D gravity = new Point2D(0, 0);
-	int lives = 3;
-	double animationDuration = 700.0;*/
-
 	public void addCharacters() {
-		addEnemys();
-
 		player = new Character(marioImg, width, height, lives, count, columns, offsetX, offsetY, gravity,
 				animationDuration, platforms, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
+		gameRoot.getChildren().add(player);
 		player.setTranslateX(0);
 		player.setTranslateY(400);
 		player.setLives(3);
-		movingListener();
-		Button button = new Button();
-		button.setText("Reload");
-		button.setOnAction(event -> {
-			restart();
-		});
-		marioLives = new Text();
-		marioLives.setX(500);
-		marioLives.setY(10);
 		
-		marioScore = new Text();
-		marioScore.setX(800);
-		marioScore.setY(10);
-
-		gameRoot.getChildren().add(player);
+		movingListener();
+		
+		addEnemys();
+	
 		appRoot.getChildren().addAll(background, gameRoot);
-		appRoot.getChildren().add(button);
-		appRoot.getChildren().add(marioLives);
-		appRoot.getChildren().add(marioScore);
+		addInterface();
 	}
 
 	private void update() {
@@ -213,45 +189,76 @@ public class Game extends Application {
 		marioScore.setText("Score: " + score);
 		if (player != null) {
 			
-			playerControll();
+			//System.out.println(player.getTranslateX());
+			controller.playerControll();
 			enemyControll();
 			
-			checkForMushroomBlock();
-			checkForBonusesBlock();
-			
+			collisionWithMushroomBlock();
+			collisionWithBonusesBlock();
+			collisionWithBrickBlock();
 			checkForKillByTurtle();
-			
 			collisionWithMushroom();
+			checkForWin();
 			
 			if (player.ifFalls()) {
-				restart();
 				player.death();
-				player.getImageView().setImage(null);
+				restart();
 			}
 		}
 	}
 	
-	private void checkForBonusesBlock() {
+	private void checkForWin() {
+		if(player.getTranslateX() > 8889) {
+			marioLives.setText("You win!");
+			marioLives.setY(300);
+			marioLives.setX(500);
+			System.out.println("You win!");
+			if(player.getTranslateX() > 8900) {
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				restart();
+			}
+		}
+	}
+
+	private void collisionWithBrickBlock() {
+		if (!player.isCanJump()) {
+			for (Node block : bricks) {
+				if (block.getTranslateY() + BLOCK_SIZE_HEIGHT + 1 == player.getTranslateY()
+						&& player.getTranslateX() < block.getTranslateX() + 20
+						&& player.getTranslateX() >= block.getTranslateX() - 20
+						&& player.isGrewUp()) {
+					gameRoot.getChildren().remove(block);
+					platforms.remove(block);
+					block = null;
+				}
+			}
+		}
+	}
+	
+	private void collisionWithBonusesBlock() {
 		if (!player.isCanJump()) {
 			for (Node block : bonuses) {
-				if (block.getTranslateY() + BLOCK_SIZE_HEIGHT + 2 >= player.getTranslateY()
-						&& block.getTranslateY() + BLOCK_SIZE_HEIGHT <= player.getTranslateY()
+				if (block.getTranslateY() + BLOCK_SIZE_HEIGHT + 1 == player.getTranslateY()
 						&& player.getTranslateX() < block.getTranslateX() + 20
 						&& player.getTranslateX() >= block.getTranslateX() - 20) {
 					score += 100;
+					//System.out.println(score);
 				}
 			}
 		}
 	}
 
-	private void checkForMushroomBlock() {
-		if (!player.isCanJump()) {
-			for (Node block : bonusesMushroom) {
-				if (block.getTranslateY() + BLOCK_SIZE_HEIGHT + 2 >= player.getTranslateY()
-						&& block.getTranslateY() + BLOCK_SIZE_HEIGHT <= player.getTranslateY()
+	private void collisionWithMushroomBlock() {
+		if (!player.isCanJump() && !player.isGrewUp()) {
+			for (Block block : bonusesMushroom) {
+				if (block != null
+						&& block.getTranslateY() + BLOCK_SIZE_HEIGHT + 1 == player.getTranslateY()
 						&& player.getTranslateX() < block.getTranslateX() + 20
 						&& player.getTranslateX() >= block.getTranslateX() - 20) {
-					// block.setTranslateY(block.getTranslateY() - 10);
 					if (mushroom == null) {
 						mushroom = new Mushroom(mushroomImg, 256, 256, lives, 0, 0, 0, 0, gravity,
 								0, platforms, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
@@ -260,6 +267,8 @@ public class Game extends Application {
 							mushroom.setTranslateX(block.getTranslateX());
 							mushroom.setTranslateY(block.getTranslateY() - BLOCK_SIZE_HEIGHT);
 							gameRoot.getChildren().add(mushroom);
+							bonusesMushroom.remove(block);
+							break;
 						}
 					}
 				}
@@ -292,17 +301,17 @@ public class Game extends Application {
 			Enemy enemy = enemyList.get(i);
 			if (enemy != null) {
 				if (enemy.isAlive()) {
-					if (enemy.getGravity().getY() < 10)
-						enemy.setGravity(enemy.getGravity().add(0, 1)); // maybe
-																		// add
-																		// set
-					enemy.moveY((int) enemy.getGravity().getY());
-
-					enemy.getAnimation().play();
 					
-					// if (enemy instanceof KoopaTroopa && enemy.getLives() !=
-					// 1) { // !enemy.isKeepGoing()
-					if (enemy.isAlive()) {
+					// Gravitation
+					if (enemy.getGravity().getY() < 10) // maybe add set
+						enemy.setGravity(enemy.getGravity().add(0, 1)); 
+					enemy.moveY((int) enemy.getGravity().getY());
+					
+					// animation
+					enemy.getAnimation().play(); 
+					
+					// choose moving side
+					if (enemy.isAlive()) { 
 						if (!enemy.isRightSide()) {
 							enemy.setScaleX(1);
 							enemy.move(-1);
@@ -311,6 +320,8 @@ public class Game extends Application {
 							enemy.move(1);
 						}
 					}
+					
+					// turtle choose moving side
 					if (enemy instanceof KoopaTroopa && enemy.getLives() < 2) {
 						if (enemy.isRightSide()) {
 							enemy.move(3);
@@ -318,16 +329,14 @@ public class Game extends Application {
 							enemy.move(-3);
 						}
 					}
+					
+					// check for player killing enemy
 					boolean checkForKill = checkForKill(enemy);
-					if (enemy instanceof Goomba && checkForKill) {
+					if (checkForKill) {
+						if (enemy instanceof Goomba) {
+							enemy.setAlive(false);
+						}
 						enemyFactory.enemyDeath(enemy);
-						enemy.setAlive(false);
-						enemy.setLives(enemy.getLives() - 1);
-					}
-					if (enemy instanceof KoopaTroopa && checkForKill) {
-						enemyFactory.enemyDeath(enemy);
-						enemy.setAlive(true);
-						// enemy.setAlive(false); // not false
 						enemy.setLives(enemy.getLives() - 1);
 					}
 				}
@@ -335,15 +344,11 @@ public class Game extends Application {
 				// delete if enemy live map
 				if (enemy.getTranslateX() <= -20 || enemy.getTranslateY() > appRoot.getHeight()) { 
 					gameRoot.getChildren().remove(enemy);
+					enemy = null;
 				}
-				
 			}
 		}
 	}
-	
-	double start = 0;
-	double finish = 0;
-	double timeOfImmortality = 1_000_000;
 	
 	private boolean checkForKill(Enemy enemy) {
 		boolean isDead = false;
@@ -365,7 +370,7 @@ public class Game extends Application {
 				
 			} else if(finish - start > timeOfImmortality) {
 				
-				System.out.println(finish - start);
+				//System.out.println(finish - start);
 				// enemy killing player
 				start = System.currentTimeMillis() * 1000;
 				if (player.isGrewUp()) {
@@ -398,7 +403,8 @@ public class Game extends Application {
 		player.translateXProperty().addListener((obs, old, newValue) -> {
 			int offset = newValue.intValue();
 			int bound = (int) (appRoot.getWidth() * 0.6);
-			if (offset > bound && offset < levelWidth - bound) {
+			if (offset > bound && offset < 
+					(LevelData.levels[levelNumber][0].length() * BLOCK_SIZE_WIDTH) - bound) {
 				gameRoot.setLayoutX(-(offset - bound));
 				background.setLayoutX(-(offset - bound));
 			}
@@ -415,75 +421,42 @@ public class Game extends Application {
 			Enemy enemy1;
 			for (int j = 0; j < enemyList.size(); j++) {
 				enemy1 = enemyList.get(j);
-				if (turtle != null && turtle != enemy1 && turtle != enemy
+				if (turtle != null
+						&& enemy1 != null && enemy1.isAlive() && turtle != enemy1
 						&& turtle.getTranslateY() >= enemy1.getTranslateY() - turtle.getHeight()
 						&& turtle.getTranslateY() <= enemy1.getTranslateY() + turtle.getHeight()
 						&& turtle.getTranslateX() < enemy1.getTranslateX() + enemy1.getWidth()
 						&& turtle.getTranslateX() > enemy1.getTranslateX() - enemy1.getWidth()
-						&& enemy instanceof KoopaTroopa ) {
+						&& (!(enemy1 instanceof KoopaTroopa && enemy1.getLives() < 2))) {
+					System.out.println("must kill");
 					enemyFactory.enemyDeath(enemy1);
 					if(enemy1 instanceof Goomba) {
 						enemy1.setAlive(false);
+					} else if(enemy1 instanceof KoopaTroopa) {
+						enemy1.setAlive(true);
 					}
 				}
 			}
 		}
 	}
 
-	private void playerControll() {
-		if ((isPressed(KeyCode.UP) || isPressed(KeyCode.W)) && player.getTranslateY() >= 5) {
-			player.jumpPlayer();
-			player.setCanJump(false);
-		}
-		if ((isPressed(KeyCode.LEFT) || isPressed(KeyCode.A)) && player.getTranslateX() >= 5) {
-			player.setScaleX(-1);
-			player.getAnimation().play();
-			player.moveX(-5);
-		}
-		if ((isPressed(KeyCode.RIGHT) || isPressed(KeyCode.D)) && player.getTranslateX() + 40 <= levelWidth - 5) {
-			player.setScaleX(1);
-			player.getAnimation().play();
-			player.moveX(5);
-		}
-		if (isPressed(KeyCode.E) || isPressed(KeyCode.Q)) {
-			try {
-				Thread.sleep(250);
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
-			}
-			Enemy e = null;
-			if (isPressed(KeyCode.E))
-				e = enemyFactory.createEnemy(EnemyType.GOOMBA, (int) (player.getTranslateX() + 100), 100,
-					BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms);
-			if (isPressed(KeyCode.Q))
-				e = enemyFactory.createEnemy(EnemyType.KOOPA_TROOPA, (int) (player.getTranslateX() + 100), 100,
-						BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms);
-			enemyList.add(e);
-			gameRoot.getChildren().add(e);
-		}
-		if (player.getGravity().getY() < 10) {
-			player.setGravity(player.getGravity().add(0, 1));
-		} else {
-			player.setCanJump(false);
-		}
-		player.moveY((int) player.getGravity().getY());
-	}
-
 	private void restart() {
+		// TODO fix restart for less ram
+		score = 0;
 		platforms.clear();
 		keys.clear(); 
 		enemyList.clear();
 		background = null;
 		//mainTheme.mediaPlayer.stop();
+		
+		player.getAnimation().stop();
+		player = null;
+		
 		gameRoot.getChildren().clear();
 		appRoot.getChildren().clear();
 		initContent();
 		gameRoot.setLayoutX(0);
 		background.setLayoutX(0);
-	}
-
-	private boolean isPressed(KeyCode key) {
-		return keys.getOrDefault(key, false);
 	}
 
 	@Override
