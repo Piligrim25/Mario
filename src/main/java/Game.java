@@ -16,7 +16,6 @@ import javafx.stage.Stage;
 
 import model.blocks.Block;
 import model.blocks.BlockFactory;
-import model.blocks.BlockType;
 import model.blocks.LevelData;
 import model.creatures.Enemy;
 import model.creatures.EnemyFactory;
@@ -25,6 +24,7 @@ import model.creatures.Goomba;
 import model.creatures.KoopaTroopa;
 import model.creatures.Character;
 import model.creatures.Mushroom;
+import model.sounds.Sound;
 import view.View;
 import controller.Controller;
 
@@ -60,7 +60,7 @@ public class Game extends Application {
 	private static final int BLOCK_SIZE_HEIGHT = 45;
 	private static final int MARIO_SIZE = 40;
 	
-	//private Sound mainTheme;
+	private Sound mainTheme;
 	private static Pane appRoot = new Pane();
 	private static Pane gameRoot = new Pane();
 	
@@ -111,8 +111,7 @@ public class Game extends Application {
 		addCharacters();
 		controller = new Controller(BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, player,
 				enemyFactory, enemyList, keys, platforms, gameRoot);
-		
-		// mainTheme = new Sound("resources\\mainTheme.mp3");
+		mainTheme = new Sound("/sounds/main_theme_overworld.mp3", 0.3);
 	}
 	
 	private void addInterface() {
@@ -142,6 +141,7 @@ public class Game extends Application {
 	}
 
 	private void addEnemys() {
+		enemyList.clear();
 		enemyList.add(
 				enemyFactory.createEnemy(EnemyType.GOOMBA, 800, 300, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, platforms));
 		enemyList.add(
@@ -165,12 +165,12 @@ public class Game extends Application {
 		gameRoot.getChildren().addAll(enemyList);
 	}
 
-	public void addCharacters() {
+	private void addCharacters() {
 		player = new Character(marioImg, width, height, lives, count, columns, offsetX, offsetY, gravity,
 				animationDuration, platforms, BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT);
 		gameRoot.getChildren().add(player);
 		player.setTranslateX(0);
-		player.setTranslateY(400);
+		player.setTranslateY(300);
 		player.setLives(3);
 		
 		movingListener();
@@ -189,7 +189,6 @@ public class Game extends Application {
 		marioScore.setText("Score: " + score);
 		if (player != null) {
 			
-			//System.out.println(player.getTranslateX());
 			controller.playerControll();
 			enemyControll();
 			
@@ -213,9 +212,10 @@ public class Game extends Application {
 			marioLives.setY(300);
 			marioLives.setX(500);
 			System.out.println("You win!");
+			new Sound("/sounds/stage_clear.wav", 0.2);
 			if(player.getTranslateX() > 8900) {
 				try {
-					Thread.sleep(2000);
+					Thread.sleep(4000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -229,11 +229,15 @@ public class Game extends Application {
 			for (Node block : bricks) {
 				if (block.getTranslateY() + BLOCK_SIZE_HEIGHT + 1 == player.getTranslateY()
 						&& player.getTranslateX() < block.getTranslateX() + 20
-						&& player.getTranslateX() >= block.getTranslateX() - 20
-						&& player.isGrewUp()) {
-					gameRoot.getChildren().remove(block);
-					platforms.remove(block);
-					block = null;
+						&& player.getTranslateX() >= block.getTranslateX() - 20) {
+					if(player.isGrewUp()){
+						gameRoot.getChildren().remove(block);
+						platforms.remove(block);
+						block = null;
+						new Sound("Break.wav", 1);
+					} else {
+						new Sound("Bump.wav", 0.7);
+					}
 				}
 			}
 		}
@@ -246,6 +250,7 @@ public class Game extends Application {
 						&& player.getTranslateX() < block.getTranslateX() + 20
 						&& player.getTranslateX() >= block.getTranslateX() - 20) {
 					score += 100;
+					new Sound("Coin.wav", 0.5);
 					//System.out.println(score);
 				}
 			}
@@ -266,6 +271,7 @@ public class Game extends Application {
 							mushroom.setIsOne(true);
 							mushroom.setTranslateX(block.getTranslateX());
 							mushroom.setTranslateY(block.getTranslateY() - BLOCK_SIZE_HEIGHT);
+							new Sound("Item.wav", 1);
 							gameRoot.getChildren().add(mushroom);
 							bonusesMushroom.remove(block);
 							break;
@@ -311,14 +317,12 @@ public class Game extends Application {
 					enemy.getAnimation().play(); 
 					
 					// choose moving side
-					if (enemy.isAlive()) { 
-						if (!enemy.isRightSide()) {
-							enemy.setScaleX(1);
-							enemy.move(-1);
-						} else {
-							enemy.setScaleX(-1);
-							enemy.move(1);
-						}
+					if (!enemy.isRightSide()) {
+						enemy.setScaleX(1);
+						enemy.move(-1);
+					} else {
+						enemy.setScaleX(-1);
+						enemy.move(1);
 					}
 					
 					// turtle choose moving side
@@ -331,18 +335,12 @@ public class Game extends Application {
 					}
 					
 					// check for player killing enemy
-					boolean checkForKill = checkForKill(enemy);
-					if (checkForKill) {
-						if (enemy instanceof Goomba) {
-							enemy.setAlive(false);
-						}
-						enemyFactory.enemyDeath(enemy);
-						enemy.setLives(enemy.getLives() - 1);
-					}
+					checkForKill(enemy);
 				}
 				
 				// delete if enemy live map
 				if (enemy.getTranslateX() <= -20 || enemy.getTranslateY() > appRoot.getHeight()) { 
+					enemyList.remove(enemy);
 					gameRoot.getChildren().remove(enemy);
 					enemy = null;
 				}
@@ -350,28 +348,50 @@ public class Game extends Application {
 		}
 	}
 	
-	private boolean checkForKill(Enemy enemy) {
-		boolean isDead = false;
+	//TODO fix bug with big jump when kill turtle
+	private void checkForKill(Enemy enemy) {
 		// collision player with enemy
-		if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
+		if (player.getBoundsInParent().intersects(enemy.getBoundsInParent()) && enemy.isAlive()) {
+			
 			// player killing enemy
-			if (player.getTranslateY() >= enemy.getTranslateY() - player.getHeight()
-					&& player.getTranslateY() <= enemy.getTranslateY() - player.getHeight() + 5) { 
-
+			if (player.getTranslateY() + player.getHeight() >= enemy.getTranslateY() 
+					&& player.getTranslateY() + player.getHeight() - 8 <= enemy.getTranslateY()
+					&& !player.isJumpOnes()) {
+				
+				//System.out.println("Killer");
 				if (player.getTranslateX() < enemy.getTranslateX()) {
 					enemy.setRightSide(true);
-				} else
+				} else {
 					enemy.setRightSide(false);
-				isDead = true;
-				if (!player.isJumpOnes()) {
-					player.setGravity(player.getGravity().add(0, -20));
-					player.setJumpOnes(true);
 				}
 				
-			} else if(finish - start > timeOfImmortality) {
+				/*if (enemy instanceof KoopaTroopa && enemy.getLives() == 1) {
+					enemy.move(0);
+				}*/
 				
+				// player jump after kill
+				player.setGravity(player.getGravity().add(0, -20));
+				player.setJumpOnes(true);
+				
+				// Goomba set killed
+				if (enemy instanceof Goomba) {
+					enemy.setAlive(false);
+				}
+				
+				// sounds
+				if (enemy instanceof KoopaTroopa && enemy.getLives() < 2) {
+					new Sound("Kick.wav", 0.5);
+				} else {
+					new Sound("Squish.wav", 1);
+				}
+				
+				// enemy die
+				enemyFactory.enemyDeath(enemy);
+				enemy.setLives(enemy.getLives() - 1);
+				
+			// enemy killing player
+			} else if(finish - start > timeOfImmortality) {
 				//System.out.println(finish - start);
-				// enemy killing player
 				start = System.currentTimeMillis() * 1000;
 				if (player.isGrewUp()) {
 					player.diminish();
@@ -379,23 +399,35 @@ public class Game extends Application {
 					player.setGrewUp(false);
 					System.out.println("diminish");
 				} else {
+					Sound DieSound;
 					if (player.getLives() == 1) {
 						// TODO add game over
+						DieSound = new Sound("Game Over.wav", 0.8);
 						System.out.println("Game over!");
-						restart();
 					} else {
 						player.death();
+						DieSound = new Sound("Die.wav", 0.8);
 					}
+					if(DieSound.getMediaPlayer().getVolume() <= 0) {
+						try {
+							Thread.sleep(2000);
+						} catch (Exception e) {
+							
+						}
+					}
+					restart();
+					player.setCanJump(false);
 				}
 				//System.out.println(player.getLives());
 			}
 			player.setCanJump(false);
 		}
+		
 		finish = System.currentTimeMillis() * 1000;
 		// check for player jump just ones
-		if(player.getGravity().getY() == 0) 
+		if(player.getGravity().getY() == 10 || player.getGravity().getY() == 0) {
 			player.setJumpOnes(false);
-		return isDead;
+		}
 	}
 	
 	// camera
@@ -441,20 +473,28 @@ public class Game extends Application {
 	}
 
 	private void restart() {
-		// TODO fix restart for less ram
+		restartButton = null;
 		score = 0;
 		platforms.clear();
+		bricks.clear();
+		bonuses.clear();
+		bonusesMushroom.clear();
 		keys.clear(); 
 		enemyList.clear();
+		
 		background = null;
-		//mainTheme.mediaPlayer.stop();
+		mainTheme.getMediaPlayer().stop();
+		mainTheme = null;
+		mushroom = null;
 		
 		player.getAnimation().stop();
 		player = null;
 		
 		gameRoot.getChildren().clear();
 		appRoot.getChildren().clear();
+		
 		initContent();
+		
 		gameRoot.setLayoutX(0);
 		background.setLayoutX(0);
 	}
@@ -484,3 +524,6 @@ public class Game extends Application {
 		launch(args);
 	}
 }
+
+//TODO for next commit turtle killing from pipe fixed, Fixed bug with a jump,
+//sounds added, fixed bug with score, restart consume less RAM

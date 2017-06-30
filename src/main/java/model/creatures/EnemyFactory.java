@@ -35,7 +35,7 @@ public class EnemyFactory {
 			height = 22;
 			offsetX = 48;
 			lives = 2;
-			animationDuration = 200.0;
+			animationDuration = 400.0;
 
 			enemy = new KoopaTroopa(enemyImage, width, height, lives, count, columns, offsetX, offsetY, gravity, x, y,
 					platforms, blockSizeWidth, (int)(1.3 * blockSizeHeight), animationDuration);

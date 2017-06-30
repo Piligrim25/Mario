@@ -10,6 +10,7 @@ import javafx.scene.image.ImageView;
 import javafx.util.Duration;
 
 import model.blocks.Block;
+import model.sounds.Sound;
 
 public class Character extends Creature {
 	private ArrayList<Block> platforms;
@@ -107,6 +108,7 @@ public class Character extends Creature {
 				height));
 		getChildren().addAll(getImageView());
 		isGrewUp = true;
+		new Sound("Powerup.wav", 0.8);
 	}
 
 	public void diminish() {
@@ -135,23 +137,21 @@ public class Character extends Creature {
 		//this.setHeight(40);
 		getChildren().addAll(getImageView());
 		isGrewUp = false;
+		
+		new Sound("Warp.wav", 0.8);
 	}
 
 	public void death() {
 		if (getImageView() != null) {
-			
 			setLives(getLives() - 1);
 			getAnimation().stop();
 			System.out.println("you'r die");
-			// dieOnes = true;
 			isGrewUp = false;
 			int width = 16;
 			int height = 16;
 			int offsetX = 176;
 			int offsetY = 32;
 			getImageView().setViewport(new Rectangle2D(offsetX, offsetY, width, height));
-			
-			// isAlive = false;
 			setCanJump(false);
 		}
 	}
@@ -160,22 +160,15 @@ public class Character extends Creature {
 		if (canJump) {
 			setGravity(getGravity().add(0, -30));
 			canJump = false;
-			// new Sound ("resources\\jump.wav");
+			new Sound ("Jump.wav", 0.8);
 		}
 	}
 
 	public boolean ifFalls() {
 		boolean falls = false;
 		if (this.getTranslateY() > 640) {
-			/*
-			 * this.setTranslateX(0); this.setTranslateY(400);
-			 */
-			// Game.gameRoot.setLayoutX(0);
-			// new Sound ("resources\\falls.wav");
-
-			// lives--;
+			new Sound("Die.wav", 0.8);
 			falls = true;
-			// deleteCharacter();
 		}
 		return falls;
 	}

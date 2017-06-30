@@ -39,8 +39,9 @@ public class Controller {
 	}
 
 	public void playerControll() {
-		if ((isPressed(KeyCode.UP) || isPressed(KeyCode.W)) && player.getTranslateY() >= 5) {
+		if ((isPressed(KeyCode.UP) || isPressed(KeyCode.W)) && player.getGravity().getY() == 10) {
 			player.jumpPlayer();
+			//new Sound("/sounds/jump.wav");
 			player.setCanJump(false);
 		}
 		if ((isPressed(KeyCode.LEFT) || isPressed(KeyCode.A)) && player.getTranslateX() >= 5) {
