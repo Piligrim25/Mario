@@ -111,7 +111,7 @@ public class Game extends Application {
 		addCharacters();
 		playerController = new PlayerController(BLOCK_SIZE_WIDTH, BLOCK_SIZE_HEIGHT, player,
 				enemyFactory, enemyList, keys, platforms, gameRoot);
-		mainTheme = new Sound("/sounds/main_theme_overworld.mp3", 0.3);
+		mainTheme = new Sound("/main_theme_overworld.mp3", 0.3);
 	}
 	
 	private void addInterface() {
@@ -221,7 +221,7 @@ public class Game extends Application {
 			marioLives.setY(300);
 			marioLives.setX(500);
 			System.out.println("You win!");
-			new Sound("/sounds/stage_clear.wav", 0.2);
+			new Sound("/model/sounds/stage_clear.wav", 0.2);
 			if(player.getTranslateX() > 8900) {
 				try {
 					Thread.sleep(4000);
@@ -361,8 +361,6 @@ public class Game extends Application {
 			}
 		}
 	}
-	
-	//TODO add to commit - fixed bug with big jump when kill enemy
 	
 	private void checkForKill(Enemy enemy) {
 		// collision player with enemy
