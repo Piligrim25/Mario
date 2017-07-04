@@ -12,7 +12,7 @@ import model.creatures.Enemy;
 import model.creatures.EnemyFactory;
 import model.creatures.EnemyType;
 
-public class Controller {
+public class PlayerController {
 	
 	private int BLOCK_SIZE_WIDTH;
 	private int BLOCK_SIZE_HEIGHT;
@@ -22,9 +22,10 @@ public class Controller {
 	private HashMap<KeyCode, Boolean> keys;
 	private ArrayList<Block> platforms;
 	private Pane gameRoot;
+	private int speed;
 	
 
-	public Controller(int bLOCK_SIZE_WIDTH, int bLOCK_SIZE_HEIGHT, Character player,
+	public PlayerController(int bLOCK_SIZE_WIDTH, int bLOCK_SIZE_HEIGHT, Character player,
 			EnemyFactory enemyFactory, ArrayList<Enemy> enemyList, HashMap<KeyCode, Boolean> keys,
 			ArrayList<Block> platforms, Pane gameRoot) {
 		super();
@@ -36,6 +37,7 @@ public class Controller {
 		this.keys = keys;
 		this.platforms = platforms;
 		this.gameRoot = gameRoot;
+		speed = 5;
 	}
 
 	public void playerControll() {
@@ -47,13 +49,13 @@ public class Controller {
 		if ((isPressed(KeyCode.LEFT) || isPressed(KeyCode.A)) && player.getTranslateX() >= 5) {
 			player.setScaleX(-1);
 			player.getAnimation().play();
-			player.moveX(-5);
+			player.moveX(-speed);
 		}
 		if ((isPressed(KeyCode.RIGHT) || isPressed(KeyCode.D)) && player.getTranslateX() + 40 <= 
 				(LevelData.levels[0][0].length() * BLOCK_SIZE_WIDTH) - 5) {
 			player.setScaleX(1);
 			player.getAnimation().play();
-			player.moveX(5);
+			player.moveX(speed);
 		}
 		if (isPressed(KeyCode.E) || isPressed(KeyCode.Q)) {
 			try {
@@ -72,6 +74,16 @@ public class Controller {
 			gameRoot.getChildren().add(e);
 			//getChildren().add(e);
 		}
+		if (isPressed(KeyCode.CONTROL)) {
+			speed = 7;
+		} else {
+			speed = 5;
+		}
+		
+		if(player.getGravity().getY() < -20) {
+			player.setGravity(player.getGravity().add(0, 10));
+		}
+		
 		if (player.getGravity().getY() < 10) {
 			player.setGravity(player.getGravity().add(0, 1));
 		} else {
