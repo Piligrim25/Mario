@@ -38,11 +38,11 @@ public class Game extends Application {
 	
 	private PlayerController playerController;
 	private View view;
-	
-	Image marioImg = new Image(getClass().getResourceAsStream("mario.png"));
+
+	private Image marioImg = new Image(getClass().getResourceAsStream("mario.png"));
 	//Image marioImg = new Image(getClass().getResourceAsStream("scottpilgrim_multiple.png"));
-	
-	Image mushroomImg = new Image(getClass().getResourceAsStream("mushroom.png"));
+
+	private Image mushroomImg = new Image(getClass().getResourceAsStream("mushroom.png"));
 
 	private static ArrayList<Block> platforms = new ArrayList<>();
 	private static ArrayList<Block> bricks = new ArrayList<>();
@@ -247,7 +247,6 @@ public class Game extends Application {
 					if(player.isGrewUp()){
 						gameRoot.getChildren().remove(block);
 						platforms.remove(block);
-						block = null;
 						new Sound("Break.wav", 1);
 					} else {
 						new Sound("Bump.wav", 0.7);
@@ -300,6 +299,7 @@ public class Game extends Application {
 		if (mushroom != null) {
 			if (mushroom.getGravity().getY() < 10)
 				mushroom.setGravity(mushroom.getGravity().add(0, 1));
+			mushroom.getGravity().add(0, 1);
 			mushroom.moveY((int) mushroom.getGravity().getY());
 			if (mushroom.getIsOne())
 				mushroom.move(mushroom.isRightSide() ? 2 : -2);
@@ -356,7 +356,6 @@ public class Game extends Application {
 				if (enemy.getTranslateX() <= -20 || enemy.getTranslateY() > appRoot.getHeight()) { 
 					enemyList.remove(enemy);
 					gameRoot.getChildren().remove(enemy);
-					enemy = null;
 				}
 			}
 		}
@@ -430,7 +429,7 @@ public class Game extends Application {
 							try {
 								Thread.sleep(2000);
 							} catch (Exception e) {
-								
+
 							}
 						}
 						restart();
@@ -474,8 +473,8 @@ public class Game extends Application {
 				turtle = enemy;
 			}
 			Enemy enemy1;
-			for (int j = 0; j < enemyList.size(); j++) {
-				enemy1 = enemyList.get(j);
+			for (Enemy anEnemyList : enemyList) {
+				enemy1 = anEnemyList;
 				if (turtle != null
 						&& enemy1 != null && enemy1.isAlive() && turtle != enemy1
 						&& turtle.getTranslateY() >= enemy1.getTranslateY() - turtle.getHeight()
@@ -485,9 +484,9 @@ public class Game extends Application {
 						&& (!(enemy1 instanceof KoopaTroopa && enemy1.getLives() < 2))) {
 					System.out.println("must kill");
 					enemyFactory.enemyDeath(enemy1);
-					if(enemy1 instanceof Goomba) {
+					if (enemy1 instanceof Goomba) {
 						enemy1.setAlive(false);
-					} else if(enemy1 instanceof KoopaTroopa) {
+					} else if (enemy1 instanceof KoopaTroopa) {
 						enemy1.setAlive(true);
 					}
 				}
